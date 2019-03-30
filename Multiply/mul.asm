@@ -2,19 +2,18 @@
 
                 global          _start
 _start:
-                sub             rsp, 5 * 128 * 8
-                lea             rdi, [rsp + 3 * 128 * 8]
-                mov             rcx, 128
+                sub             rsp, 5 * 256 * 8
+                lea             rdi, [rsp + 3 * 256 * 8]
+                mov             rcx, 256
                 call            read_long
-                lea             rdi, [rsp + 4 * 128 * 8]
+                lea             rdi, [rsp + 4 * 256 * 8]
                 call            read_long
 
                 mov             rsi, rsp
-                lea             rdi, [rsp + 128 * 8]
-                lea             r10, [rsp + 3 * 128 * 8]
-                lea             r11, [rsp + (5 * 128 - 1) * 8]
+                lea             rdi, [rsp + 256 * 8]
+                lea             r10, [rsp + 3 * 256 * 8]
+                lea             r11, [rsp + (5 * 256 - 1) * 8]
 
-                mov             rcx, 256
                 call            set_zero
                 call            mul_long_long
 
@@ -36,7 +35,7 @@ mul_long_long:
                 push            r11
                 push            rcx
 
-                mov             rcx, 128
+                mov             rcx, 256
                 clc
 
 .loop:
@@ -65,7 +64,7 @@ mul_r10_rbx:
                 push            rcx
                 push            rsi
 
-                mov             rcx, 128
+                mov             rcx, 256
                 xor             r12, r12
 .loop:
                 mov             rax, [r10]
@@ -92,8 +91,8 @@ shift_rdi:
                 push            rcx
 
                 clc
-                lea             rdi, [rdi + (256 - 1) * 8]
-                mov             rcx, 256 - 1
+                lea             rdi, [rdi + (512 - 1) * 8]
+                mov             rcx, 512 - 1
 
 .loop:
                 mov             rax, [rdi - 8]
@@ -122,7 +121,7 @@ add_rdi_rsi:
                 push            rcx
                 push            rax
 
-                mov             rcx, 128
+                mov             rcx, 256
                 clc
 
 .loop:
@@ -151,7 +150,7 @@ add_long_short:
                 push            rdx
                 push            rax
 
-                mov             rcx, 128
+                mov             rcx, 256
                 xor             rdx, rdx
 .loop:
                 add             [rdi], rax
@@ -181,7 +180,7 @@ mul_long_short:
                 push            rcx
                 push             rsi
 
-                mov             rcx, 128
+                mov             rcx, 256
                 xor             rsi, rsi
 .loop:
                 mov             rax, [rdi]
