@@ -2,21 +2,22 @@
 
                 global          _start
 _start:
-
-                sub             rsp, 4 * 128 * 8
-                lea             rdi, [rsp + 2 * 128 * 8]
+                sub             rsp, 5 * 128 * 8
+                lea             rdi, [rsp + 3 * 128 * 8]
                 mov             rcx, 128
                 call            read_long
-                lea             rdi, [rsp + 3 * 128 * 8]
+                lea             rdi, [rsp + 4 * 128 * 8]
                 call            read_long
-                
+
                 mov             rsi, rsp
                 lea             rdi, [rsp + 128 * 8]
-                lea             r10, [rsp + 2 * 128 * 8]
-                lea             r11, [rsp + (4 * 128 - 1) * 8]
+                lea             r10, [rsp + 3 * 128 * 8]
+                lea             r11, [rsp + (5 * 128 - 1) * 8]
+
+                mov             rcx, 256
                 call            set_zero
                 call            mul_long_long
-                
+
                 call            write_long
 
                 mov             al, 0x0a
@@ -24,21 +25,22 @@ _start:
 
                 jmp             exit
 
-; multiplies two long number
+; mul two long number
 ;    r10 -- address of multiplier #1 (long number)
 ;    r11 -- address of multiplier #2 (long number)
 ;    rcx -- length of long numbers in qwords
 ; result:
-;    product is written to rdi
+;    prod is written to rdi
 mul_long_long:
                 push            r10
                 push            r11
                 push            rcx
-                
+
+                mov             rcx, 128
                 clc
-                
+
 .loop:
-                mov             rbx, [r11]
+                mov             rbx, [r11] 
                 call            mul_r10_rbx
                 call            shift_rdi
                 call            add_rdi_rsi
@@ -51,13 +53,15 @@ mul_long_long:
                 pop             r10
                 ret
 
-; multiplies long number by short
+; multiplies long number by a short
 ;    r10 -- address of multiplier #1 (long number)
-;    rbx -- multiplier #2 (short number)
+;    rbx -- multiplier #2 (64-bit unsigned)
+;    rcx -- length of long number in qwords
 ; result:
 ;    product is written to rsi
 mul_r10_rbx:
-                push            r10
+                push            r10                
+                push            rax
                 push            rcx
                 push            rsi
 
@@ -77,17 +81,20 @@ mul_r10_rbx:
 
                 pop             rsi
                 pop             rcx
+                pop             rax
                 pop             r10
-                ret                
+                ret
 
 ; shifts rdi to one pos
 shift_rdi:
                 push            rdi
+                push            rax
                 push            rcx
-                
+
                 clc
-                lea             rdi, [rdi + (128 - 1) * 8]
-                mov             rcx, 128 - 1
+                lea             rdi, [rdi + (256 - 1) * 8]
+                mov             rcx, 256 - 1
+
 .loop:
                 mov             rax, [rdi - 8]
                 mov             [rdi], rax
@@ -95,25 +102,29 @@ shift_rdi:
                 dec             rcx
                 jnz             .loop
 
-                xor             rax, rax
-                mov             [rdi - 8], rax
-                
+                xor             rax, rax 
+                mov             [rdi], rax
+
                 pop             rcx
+                pop             rax
                 pop             rdi
                 ret
 
 ; adds two long number
 ;    rdi -- address of summand #1 (long number)
 ;    rsi -- address of summand #2 (long number)
+;    rcx -- length of long numbers in qwords
 ; result:
 ;    sum is written to rdi
 add_rdi_rsi:
                 push            rdi
                 push            rsi
                 push            rcx
-                
+                push            rax
+
                 mov             rcx, 128
                 clc
+
 .loop:
                 mov             rax, [rsi]
                 lea             rsi, [rsi + 8]
@@ -121,7 +132,8 @@ add_rdi_rsi:
                 lea             rdi, [rdi + 8]
                 dec             rcx
                 jnz             .loop
-                
+
+                pop             rax
                 pop             rcx
                 pop             rsi
                 pop             rdi
@@ -137,7 +149,9 @@ add_long_short:
                 push            rdi
                 push            rcx
                 push            rdx
+                push            rax
 
+                mov             rcx, 128
                 xor             rdx, rdx
 .loop:
                 add             [rdi], rax
@@ -148,10 +162,12 @@ add_long_short:
                 dec             rcx
                 jnz             .loop
 
+                pop             rax
                 pop             rdx
                 pop             rcx
                 pop             rdi
                 ret
+                
 
 ; multiplies long number by a short
 ;    rdi -- address of multiplier #1 (long number)
@@ -163,7 +179,9 @@ mul_long_short:
                 push            rax
                 push            rdi
                 push            rcx
+                push             rsi
 
+                mov             rcx, 128
                 xor             rsi, rsi
 .loop:
                 mov             rax, [rdi]
@@ -176,6 +194,7 @@ mul_long_short:
                 dec             rcx
                 jnz             .loop
 
+                pop             rsi
                 pop             rcx
                 pop             rdi
                 pop             rax
@@ -192,7 +211,7 @@ div_long_short:
                 push            rdi
                 push            rax
                 push            rcx
-
+                
                 lea             rdi, [rdi + 8 * rcx - 8]
                 xor             rdx, rdx
 
@@ -208,7 +227,7 @@ div_long_short:
                 pop             rax
                 pop             rdi
                 ret
-
+                
 ; assigns a zero to long number
 ;    rdi -- argument (long number)
 ;    rcx -- length of long number in qwords
@@ -355,6 +374,9 @@ read_char:
 ; write one char to stdout, errors are ignored
 ;    al -- char
 write_char:
+                push            rdi
+                push            rsi
+    
                 sub             rsp, 1
                 mov             [rsp], al
 
@@ -364,6 +386,9 @@ write_char:
                 mov             rdx, 1
                 syscall
                 add             rsp, 1
+                
+                pop             rsi
+                pop             rdi
                 ret
 
 exit:
@@ -388,4 +413,4 @@ print_string:
                 section         .rodata
 invalid_char_msg:
                 db              "Invalid character: "
-invalid_char_msg_size:equ             $ - invalid_char_msg
+invalid_char_msg_size: equ             $ - invalid_char_msg
